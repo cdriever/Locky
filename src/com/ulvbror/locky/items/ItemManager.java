@@ -32,6 +32,13 @@ public class ItemManager {
         item.setItemMeta(meta);
         lock_personal = item;
     }
+    public static boolean isLockPersonal(ItemStack item) {
+        if(item.getType() == Material.GUNPOWDER) {
+            return item.getItemMeta().getDisplayName()
+                    .equalsIgnoreCase(ChatColor.LIGHT_PURPLE + " Personal Locking Powder");
+        }
+        return false;
+    }
 
     private static void createUnlockPersonal() {
         ItemStack item = new ItemStack(Material.SUGAR, 1);
@@ -44,5 +51,16 @@ public class ItemManager {
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         item.setItemMeta(meta);
         unlock_personal = item;
+    }
+    public static boolean isUnlockPersonal(ItemStack item) {
+        if(item.getType() == Material.SUGAR) {
+            return item.getItemMeta().getDisplayName()
+                    .equalsIgnoreCase(ChatColor.LIGHT_PURPLE + " Personal Unlocking Powder");
+        }
+        return false;
+    }
+
+    public static boolean isCustom(ItemStack item) {
+        return ( isLockPersonal(item) || isUnlockPersonal(item) );
     }
 }

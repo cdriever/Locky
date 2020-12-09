@@ -22,6 +22,11 @@ public class LockData {
             this.lockedChests.put(location,id);
     }
 
+    public void removeLockedChest(Vector location, UUID id) {
+        this.lockedChests.remove(location);
+    }
+
+
     public void addLockedDoor(Vector location, UUID id) {
         if(!this.lockedDoors.containsKey(location))
             this.lockedDoors.put(location,id);

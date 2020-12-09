@@ -102,6 +102,39 @@ public class DataManager {
             return false;
     }
 
+    public void removeChestLock(Vector location, UUID id) {
+        Map<String, Object> chests = this.getData().getConfigurationSection("locky.chestlocks." + id).getValues(false);
+        int chestIndex = -1, count = 0;
+        for (Map.Entry<String, Object> chest : chests.entrySet()) {
+            String path = "locky.chestlocks." + id + "." + chest.getKey() + ".";
+            double x = (double) this.getData().get(path + "x");
+            double y = (double) this.getData().get(path + "y");
+            double z = (double) this.getData().get(path + "z");
+            Vector loc = new Vector(x,y,z);
+            if(loc.equals(location)) {
+                chestIndex = Integer.parseInt(chest.getKey().substring(5));
+            }
+            count++;
+        }
+        for(int i = chestIndex; i < count; i++) {
+            String oldPath = "locky.chestlocks." + id + ".chest_"+(i+1)+".";
+            String newPath = "locky.chestlocks." + id + ".chest_"+i+".";
+            if(i != count-1) {
+                float x = (float) this.getData().get(oldPath + "x");
+                float y = (float) this.getData().get(oldPath + "y");
+                float z = (float) this.getData().get(oldPath + "z");
+                this.getData().set(newPath + "x", x);
+                this.getData().set(newPath + "y", y);
+                this.getData().set(newPath + "z", z);
+            } else {
+                this.getData().set(newPath + "x", null);
+                this.getData().set(newPath + "y", null);
+                this.getData().set(newPath + "z", null);
+            }
+        }
+        this.saveData();
+    }
+
     public void loadData(){
         Bukkit.getServer().getConsoleSender().sendMessage(ChatColor.RED + "Loading Locks!");
         loadChestLocks();

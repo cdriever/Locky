@@ -11,13 +11,12 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
 import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.inventory.DoubleChestInventory;
-import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.*;
 import org.bukkit.util.Vector;
 
 import javax.xml.crypto.Data;
@@ -41,12 +40,28 @@ public class LockEvents implements Listener {
                         if(DataManager.getInstance().registerChestLock(chestLocation.toVector(), player.getUniqueId())) {
                             player.spawnParticle(Particle.CRIT_MAGIC, chestLocation, 100);
                             player.playSound(chestLocation, Sound.BLOCK_ANVIL_PLACE, 1f, 2f);
-                            player.getInventory().getItem(EquipmentSlot.HAND).setAmount(player.getInventory().getItem(EquipmentSlot.HAND).getAmount()-1);
+                            player.getInventory().getItem(EquipmentSlot.HAND).setAmount(player.getInventory()
+                                    .getItem(EquipmentSlot.HAND).getAmount()-1);
                             player.sendRawMessage( (ChatColor.AQUA + "Locked chest at: ")
                                     + ChatColor.YELLOW + (chestLocation.getBlockX() + ", " + chestLocation.getBlockY()
                                     + ", " + chestLocation.getBlockZ()) );
                         } else {
                             player.sendRawMessage( ChatColor.RED + "That chest is already locked!");
+                        }
+                    } else if(event.getItem().getItemMeta().equals(ItemManager.unlock_personal.getItemMeta())) {
+                        Location chestLocation = inventory.getLocation();
+                        if(DataManager.getInstance().lockData.lockedChests.containsKey(chestLocation.toVector())) {
+                            if(DataManager.getInstance().lockData.lockedChests
+                                    .get(chestLocation.toVector()).equals(player.getUniqueId())){
+                                player.spawnParticle(Particle.CRIT_MAGIC, chestLocation, 100);
+                                player.playSound(chestLocation, Sound.BLOCK_ANVIL_PLACE, 1f, 2f);
+                                player.getInventory().getItem(EquipmentSlot.HAND).setAmount(player.getInventory()
+                                        .getItem(EquipmentSlot.HAND).getAmount()-1);
+                            } else {
+                                player.sendRawMessage(ChatColor.RED + "That locked chest doesn't belong to you!");
+                            }
+                        } else {
+                            player.sendRawMessage(ChatColor.RED + "That chest isn't locked!");
                         }
                     }
                 }
@@ -113,6 +128,20 @@ public class LockEvents implements Listener {
                 if(inv instanceof DoubleChestInventory) {
                     if (DataManager.getInstance().lockData.lockedChests.containsKey(inv.getLocation().toVector())) {
                         event.blockList().remove(b);
+                    }
+                }
+            }
+        }
+    }
+
+    @EventHandler
+    public static void onTryCraft(PrepareItemCraftEvent event) {
+        CraftingInventory inv = event.getInventory();
+        for(ItemStack item : inv) {
+            if (item != null && inv.getResult() != null) {
+                if(!(inv.getResult().getItemMeta().equals(item.getItemMeta())) ) {//ignore result
+                    if (ItemManager.isCustom(item)) {
+                        inv.setResult(null);
                     }
                 }
             }

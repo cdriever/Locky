@@ -6,4 +6,4 @@ api-version: 1.14
 commands:
   givelock:
     description: Gives the player a personal or team lock
-    usage: /<command>
+    usage: /<command> [personal|team] <player>
