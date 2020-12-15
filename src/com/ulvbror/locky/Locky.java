@@ -15,8 +15,11 @@ public class Locky extends JavaPlugin {
 
     @Override
     public void onEnable() {
+
+
         ItemManager.init();
         getCommand("givelock").setExecutor(new LockCommands());
+        getCommand("giveunlock").setExecutor(new LockCommands());
         getServer().getPluginManager().registerEvents(new LockEvents(), this);
 
         dataManager.setup(this);

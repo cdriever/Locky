@@ -7,3 +7,6 @@ commands:
   givelock:
     description: Gives the player a personal or team lock
     usage: /<command>
+  giveunlock:
+    description: Gives the player a personal or team unlock
+    usage: /<command>

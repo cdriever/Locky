@@ -31,4 +31,8 @@ public class LockData {
         if(!this.lockedDoors.containsKey(location))
             this.lockedDoors.put(location,id);
     }
+
+    public void removeLockedDoor(Vector location, UUID id) {
+        this.lockedDoors.remove(location);
+    }
 }

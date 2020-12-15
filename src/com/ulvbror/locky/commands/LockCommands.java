@@ -56,6 +56,44 @@ public class LockCommands implements CommandExecutor {
                 return true;
             }
         }
+        else if(command.getName().equalsIgnoreCase("giveunlock")) {
+            if(args.length <= 0) {
+                sender.sendMessage(ChatColor.RED + "Invalid usage of /giveunlock, please");
+                sender.sendMessage(ChatColor.RED + "type '/locky help' for more info");
+                return true;
+            }
+
+            if(args[0].equalsIgnoreCase("personal")) {
+                int count = 1;
+                if(args.length > 1) {
+                    try {
+                        count = Integer.parseInt(args[1]);
+                    } catch (NumberFormatException e) {
+                        sender.sendMessage(ChatColor.RED + "Invalid usage of /giveunlock personal <amount>,");
+                        sender.sendMessage(ChatColor.RED + "the amount given must be a valid integer");
+                        return true;
+                    }
+                    if(count >= 1 && count <= 64) {
+                        ItemStack temp = ItemManager.unlock_personal;
+                        temp.setAmount(count);
+                        player.getInventory().addItem(temp);
+                        sender.sendMessage(ChatColor.AQUA + (count + " Personal unlock(s) added to inventory"));
+                    } else {
+                        sender.sendMessage(ChatColor.RED + "Invalid usage of /giveunlock personal <amount>,");
+                        sender.sendMessage(ChatColor.RED + "the amount given must be between 1 to 64");
+                        return true;
+                    }
+                } else {
+                    player.getInventory().addItem(ItemManager.unlock_personal);
+                    sender.sendMessage(ChatColor.AQUA + "Personal unlock added to inventory");
+                }
+            }
+            else {
+                sender.sendMessage(ChatColor.RED + "Invalid usage of /giveunlock, please");
+                sender.sendMessage(ChatColor.RED + "type '/locky help' for more info");
+                return true;
+            }
+        }
 
         return true;
     }

@@ -6,20 +6,22 @@ import com.ulvbror.locky.data.LockData;
 import com.ulvbror.locky.items.ItemManager;
 import org.bukkit.*;
 import org.bukkit.block.*;
+import org.bukkit.block.data.Bisected;
+import org.bukkit.block.data.type.Door;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
 import org.bukkit.event.entity.EntityExplodeEvent;
-import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.*;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.util.Vector;
 
-import javax.xml.crypto.Data;
 import java.util.ArrayList;
 import java.util.UUID;
 
@@ -30,13 +32,18 @@ public class LockEvents implements Listener {
         if (event.getClickedBlock() != null && event.getAction() == Action.RIGHT_CLICK_BLOCK) {
             Player player = event.getPlayer();
             Block block = event.getClickedBlock();
+            //player.sendRawMessage("block?"+block);
             BlockState blockState = block.getState();
-            if(blockState instanceof Chest) {
-                Chest chest = (Chest) blockState;
-                Inventory inventory = chest.getInventory();
-                if (event.getItem() != null) {
-                    if (event.getItem().getItemMeta().equals(ItemManager.lock_personal.getItemMeta())) {
-                        Location chestLocation = inventory.getLocation();
+            //LOCKING
+            if (event.getItem() != null) {
+                ItemMeta meta = event.getItem().getItemMeta();
+                //CHEST
+                if(blockState instanceof Chest) {
+                    Chest chest = (Chest) blockState;
+                    Inventory inventory = chest.getInventory();
+                    Location chestLocation = inventory.getLocation();
+                    if ( meta.getDisplayName()
+                            .equalsIgnoreCase(ItemManager.lock_personal.getItemMeta().getDisplayName()) ) {
                         if(DataManager.getInstance().registerChestLock(chestLocation.toVector(), player.getUniqueId())) {
                             player.spawnParticle(Particle.CRIT_MAGIC, chestLocation, 100);
                             player.playSound(chestLocation, Sound.BLOCK_ANVIL_PLACE, 1f, 2f);
@@ -48,23 +55,109 @@ public class LockEvents implements Listener {
                         } else {
                             player.sendRawMessage( ChatColor.RED + "That chest is already locked!");
                         }
-                    } else if(event.getItem().getItemMeta().equals(ItemManager.unlock_personal.getItemMeta())) {
-                        Location chestLocation = inventory.getLocation();
-                        if(DataManager.getInstance().lockData.lockedChests.containsKey(chestLocation.toVector())) {
-                            if(DataManager.getInstance().lockData.lockedChests
-                                    .get(chestLocation.toVector()).equals(player.getUniqueId())){
-                                player.spawnParticle(Particle.CRIT_MAGIC, chestLocation, 100);
-                                player.playSound(chestLocation, Sound.BLOCK_ANVIL_PLACE, 1f, 2f);
-                                player.getInventory().getItem(EquipmentSlot.HAND).setAmount(player.getInventory()
-                                        .getItem(EquipmentSlot.HAND).getAmount()-1);
+                    }
+                    else if( meta.getDisplayName()
+                            .equalsIgnoreCase(ItemManager.unlock_personal.getItemMeta().getDisplayName()) ) {
+                            if(DataManager.getInstance().lockData.lockedChests.containsKey(chestLocation.toVector())) {
+                                if(DataManager.getInstance().lockData.lockedChests
+                                        .get(chestLocation.toVector()).equals(player.getUniqueId())){
+                                    DataManager.getInstance().removeChestLock(chestLocation.toVector(),player.getUniqueId());
+                                    player.spawnParticle(Particle.CRIT_MAGIC, chestLocation, 100);
+                                    player.playSound(chestLocation, Sound.BLOCK_ANVIL_PLACE, 1f, 2f);
+                                    player.getInventory().getItem(EquipmentSlot.HAND).setAmount(player.getInventory()
+                                            .getItem(EquipmentSlot.HAND).getAmount()-1);
+                                } else {
+                                    player.sendRawMessage(ChatColor.RED + "That locked chest doesn't belong to you!");
+                                }
                             } else {
-                                player.sendRawMessage(ChatColor.RED + "That locked chest doesn't belong to you!");
+                                player.sendRawMessage(ChatColor.RED + "That chest isn't locked!");
+                            }
+                        }
+                }
+                //DOOR
+                else if(block.getType().toString().contains("DOOR")) {
+                    if( ItemManager.isCustom(event.getItem()) ) {
+                        if( !(block.getType().toString().contains("IRON")) ) {
+                            Location doorLocation = block.getLocation();
+                            Door door = (Door) block.getBlockData();
+                            if(door.getHalf() == Bisected.Half.TOP) {
+                                doorLocation = doorLocation.subtract(0,1,0);
+                                player.sendRawMessage("was top");
+                            }
+                            if(meta.getDisplayName()
+                                    .equalsIgnoreCase(ItemManager.lock_personal.getItemMeta().getDisplayName())) {
+                                if(DataManager.getInstance().registerDoorLock(doorLocation.toVector(), player.getUniqueId())) {
+                                    player.spawnParticle(Particle.CRIT_MAGIC, doorLocation, 100);
+                                    player.playSound(doorLocation, Sound.BLOCK_ANVIL_PLACE, 1f, 2f);
+                                    player.getInventory().getItem(EquipmentSlot.HAND).setAmount(player.getInventory()
+                                            .getItem(EquipmentSlot.HAND).getAmount()-1);
+                                    player.sendRawMessage( (ChatColor.AQUA + "Locked door at: ")
+                                            + ChatColor.YELLOW + (doorLocation.getBlockX() + ", " + doorLocation.getBlockY()
+                                            + ", " + doorLocation.getBlockZ()) );
+                                    event.setCancelled(true);
+                                } else {
+                                    player.sendRawMessage( ChatColor.RED + "That door is already locked!");
+                                }
+                            }
+                            else if(meta.getDisplayName()
+                                    .equalsIgnoreCase(ItemManager.unlock_personal.getItemMeta().getDisplayName())) {
+                                if(DataManager.getInstance().lockData.lockedChests.containsKey(doorLocation.toVector())) {
+                                    if(DataManager.getInstance().lockData.lockedChests
+                                            .get(doorLocation.toVector()).equals(player.getUniqueId())){
+                                        DataManager.getInstance().removeDoorLock(doorLocation.toVector(),player.getUniqueId());
+                                        player.spawnParticle(Particle.CRIT_MAGIC, doorLocation, 100);
+                                        player.playSound(doorLocation, Sound.BLOCK_ANVIL_PLACE, 1f, 2f);
+                                        player.getInventory().getItem(EquipmentSlot.HAND).setAmount(player.getInventory()
+                                                .getItem(EquipmentSlot.HAND).getAmount()-1);
+                                        event.setCancelled(true);
+                                    } else {
+                                        player.sendRawMessage(ChatColor.RED + "That locked door doesn't belong to you!");
+                                    }
+                                } else {
+                                    player.sendRawMessage(ChatColor.RED + "That door isn't locked!");
+                                }
                             }
                         } else {
-                            player.sendRawMessage(ChatColor.RED + "That chest isn't locked!");
+                            player.sendRawMessage(ChatColor.RED + "You cannot lock/unlock an iron door");
+                        }
+                    }
+
+                }
+            }
+            if(isNonIronDoor(block)) {
+                Location doorLocation = getBottomDoorLocation(block);
+                if(DataManager.getInstance().lockData.lockedDoors.containsKey(doorLocation.toVector())) {
+                    UUID lockedTo = DataManager.getInstance().lockData.lockedDoors.get(doorLocation.toVector());
+                    if(lockedTo != null) {
+                        if(!lockedTo.equals(player.getUniqueId())) {
+                            player.sendRawMessage(ChatColor.LIGHT_PURPLE + "Sorry, this door is locked");
+                            event.setCancelled(true);
                         }
                     }
                 }
+            }
+        }
+    }
+    private static Location getBottomDoorLocation(Block b) {
+        Location doorLocation = b.getLocation();
+        Door door = (Door) b.getBlockData();
+        if(door.getHalf() == Bisected.Half.TOP) {
+            doorLocation = doorLocation.subtract(0,1,0);
+        }
+        return doorLocation;
+    }
+    private static boolean isNonIronDoor(Block block) {
+        return (block.getType().toString().contains("DOOR") && !(block.getType().toString().contains("IRON")));
+    }
+
+    @EventHandler
+    public static void onRedstoneLevelChange(BlockRedstoneEvent event) {
+        Block block = event.getBlock();
+        if(isNonIronDoor(block)) {
+            Location doorLocation = getBottomDoorLocation(block);
+            if(DataManager.getInstance().lockData.lockedDoors.containsKey(doorLocation.toVector())) {
+                if(event.getNewCurrent() > 0)
+                    event.setNewCurrent(0);
             }
         }
     }
@@ -75,7 +168,7 @@ public class LockEvents implements Listener {
             Player player = (Player) event.getPlayer();
             if(event.getInventory().getType() == InventoryType.CHEST) {
                 Location chestLocation = event.getInventory().getLocation();
-                player.sendRawMessage(ChatColor.BLUE + ("LOC: "+chestLocation.toVector()));
+                //player.sendRawMessage(ChatColor.BLUE + ("LOC: "+chestLocation.toVector()));
                 if(DataManager.getInstance().lockData.lockedChests.containsKey(chestLocation.toVector()) ) {
                     UUID lockedTo = DataManager.getInstance().lockData.lockedChests.get(chestLocation.toVector());
                     if(!lockedTo.equals(player.getUniqueId())) {
@@ -84,7 +177,9 @@ public class LockEvents implements Listener {
                     }
                 }
                 if(player.getInventory().getItemInMainHand().getType() != Material.AIR) {
-                    if(player.getInventory().getItemInMainHand().getItemMeta().equals(ItemManager.lock_personal.getItemMeta()))
+                    String dispName = player.getInventory().getItemInMainHand().getItemMeta().getDisplayName();
+                    if(dispName.equalsIgnoreCase(ItemManager.lock_personal.getItemMeta().getDisplayName()) ||
+                        dispName.equalsIgnoreCase(ItemManager.unlock_personal.getItemMeta().getDisplayName()))
                         event.setCancelled(true);
                 }
             }
@@ -98,11 +193,16 @@ public class LockEvents implements Listener {
         if(b.getState() instanceof Chest) {
             Chest chest = (Chest) b.getState();
             Inventory inv = chest.getInventory();
-            if(inv instanceof DoubleChestInventory) {
-                if (DataManager.getInstance().lockData.lockedChests.containsKey(inv.getLocation().toVector())) {
-                    p.sendRawMessage(ChatColor.RED + "Unable to break a locked chest, unlock it first");
-                    event.setCancelled(true);
-                }
+            if (DataManager.getInstance().lockData.lockedChests.containsKey(inv.getLocation().toVector())) {
+                p.sendRawMessage(ChatColor.RED + "Unable to break a locked chest, unlock it first");
+                event.setCancelled(true);
+            }
+        }
+        else if(isNonIronDoor(b)) {
+            Location doorLocation = getBottomDoorLocation(b);
+            if(DataManager.getInstance().lockData.lockedDoors.containsKey(doorLocation.toVector())) {
+                p.sendRawMessage(ChatColor.RED + "Unable to break a locked door, unlock it first");
+                event.setCancelled(true);
             }
         }
     }
@@ -118,6 +218,12 @@ public class LockEvents implements Listener {
                 }
             }
         }
+        else if(isNonIronDoor(b)) {
+            Location doorLocation = getBottomDoorLocation(b);
+            if(DataManager.getInstance().lockData.lockedDoors.containsKey(doorLocation.toVector())) {
+                event.setCancelled(true);
+            }
+        }
     }
     @EventHandler
     public static void onEntityExplode(EntityExplodeEvent event) {
@@ -129,6 +235,12 @@ public class LockEvents implements Listener {
                     if (DataManager.getInstance().lockData.lockedChests.containsKey(inv.getLocation().toVector())) {
                         event.blockList().remove(b);
                     }
+                }
+            }
+            else if(isNonIronDoor(b)) {
+                Location doorLocation = getBottomDoorLocation(b);
+                if(DataManager.getInstance().lockData.lockedDoors.containsKey(doorLocation.toVector())) {
+                    event.blockList().remove(b);
                 }
             }
         }
